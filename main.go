@@ -43,6 +43,13 @@ func main() {
 	rootCmd.AddCommand(commands.TodoCmd)
 	rootCmd.AddCommand(commands.CommitCmd)
 	rootCmd.AddCommand(commands.MergeCmd)
+	rootCmd.AddCommand(commands.RemoteCmd)
+	
+	// Add standalone remote commands
+	rootCmd.AddCommand(commands.PushCmd)
+	rootCmd.AddCommand(commands.PullCmd)
+	rootCmd.AddCommand(commands.FetchCmd)
+	rootCmd.AddCommand(commands.SyncCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println("Error:", err)

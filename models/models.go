@@ -34,10 +34,19 @@ type Commit struct {
 	Author    string    `json:"author"`
 }
 
+// Remote represents a remote repository
+type Remote struct {
+	Name string `json:"name"`
+	URL  string `json:"url"`
+	Type string `json:"type"` // "http", "file", "git"
+}
+
 // Repository represents the entire todo repository
 type Repository struct {
 	Branches      []Branch `json:"branches"`
 	Commits       []Commit `json:"commits"`
 	CurrentBranch string   `json:"current_branch"`
 	NextTodoID    int      `json:"next_todo_id"`
+	Remotes       []Remote `json:"remotes"`
+	LastSync      time.Time `json:"last_sync"`
 }

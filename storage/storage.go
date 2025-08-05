@@ -50,6 +50,8 @@ func (s *Storage) LoadRepository() (*models.Repository, error) {
 			Commits:       []models.Commit{},
 			CurrentBranch: "main",
 			NextTodoID:    1,
+			Remotes:       []models.Remote{},
+			LastSync:      time.Time{},
 		}
 		s.SaveRepository(repo)
 		return repo, nil
