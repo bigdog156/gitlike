@@ -277,6 +277,151 @@ func (g *GitService) PushToRemote() error {
 	return nil
 }
 
+// PushToRemoteWithDetails pushes changes and returns detailed information
+func (g *GitService) PushToRemoteWithDetails() (string, error) {
+	if !g.IsGitRepo() {
+		return "", fmt.Errorf("not in a git repository")
+	}
+
+	// Get current branch
+	currentBranch, err := g.GetCurrentBranch()
+	if err != nil {
+		return "", fmt.Errorf("failed to get current branch: %v", err)
+	}
+
+	// Check if remote tracking branch exists
+	trackingCmd := exec.Command("git", "rev-parse", "--abbrev-ref", currentBranch+"@{upstream}")
+	trackingCmd.Dir = g.repoPath
+	_, trackingErr := trackingCmd.Output()
+
+	var pushCmd *exec.Cmd
+	if trackingErr != nil {
+		// No upstream branch, set it up
+		pushCmd = exec.Command("git", "push", "--set-upstream", "origin", currentBranch)
+	} else {
+		// Upstream exists, normal push
+		pushCmd = exec.Command("git", "push")
+	}
+
+	pushCmd.Dir = g.repoPath
+	output, err := pushCmd.CombinedOutput()
+	if err != nil {
+		return string(output), fmt.Errorf("git push failed: %s", string(output))
+	}
+
+	return string(output), nil
+}
+
+// GetCommitsSinceLastPush returns commits that haven't been pushed
+func (g *GitService) GetCommitsSinceLastPush() ([]models.Commit, error) {
+	if !g.IsGitRepo() {
+		return nil, fmt.Errorf("not in a git repository")
+	}
+
+	currentBranch, err := g.GetCurrentBranch()
+	if err != nil {
+		return nil, err
+	}
+
+	// Try to get commits since last push
+	cmd := exec.Command("git", "log", "origin/"+currentBranch+"..HEAD", "--pretty=format:%H|%s|%an|%at")
+	cmd.Dir = g.repoPath
+	output, err := cmd.Output()
+	if err != nil {
+		// If origin/branch doesn't exist, get all commits
+		cmd = exec.Command("git", "log", "HEAD", "--pretty=format:%H|%s|%an|%at")
+		cmd.Dir = g.repoPath
+		output, err = cmd.Output()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var commits []models.Commit
+	if len(output) == 0 {
+		return commits, nil
+	}
+
+	scanner := bufio.NewScanner(strings.NewReader(string(output)))
+	for scanner.Scan() {
+		line := scanner.Text()
+		parts := strings.Split(line, "|")
+		if len(parts) != 4 {
+			continue
+		}
+
+		timestamp, err := strconv.ParseInt(parts[3], 10, 64)
+		if err != nil {
+			continue
+		}
+
+		commit := models.Commit{
+			ID:        parts[0][:8],
+			Message:   parts[1],
+			Author:    parts[2],
+			Branch:    currentBranch,
+			CreatedAt: time.Unix(timestamp, 0),
+			Todos:     []int{},
+		}
+
+		commits = append(commits, commit)
+	}
+
+	return commits, nil
+}
+
+// HasUnpushedChanges checks if there are unpushed commits
+func (g *GitService) HasUnpushedChanges() (bool, error) {
+	if !g.IsGitRepo() {
+		return false, fmt.Errorf("not in a git repository")
+	}
+
+	commits, err := g.GetCommitsSinceLastPush()
+	if err != nil {
+		return false, err
+	}
+
+	return len(commits) > 0, nil
+}
+
+// GetPushStatus returns detailed push status information
+func (g *GitService) GetPushStatus() (map[string]interface{}, error) {
+	if !g.IsGitRepo() {
+		return nil, fmt.Errorf("not in a git repository")
+	}
+
+	status := make(map[string]interface{})
+
+	// Current branch
+	currentBranch, err := g.GetCurrentBranch()
+	if err != nil {
+		return nil, err
+	}
+	status["current_branch"] = currentBranch
+
+	// Check if there are unpushed commits
+	unpushedCommits, err := g.GetCommitsSinceLastPush()
+	if err == nil {
+		status["unpushed_commits"] = len(unpushedCommits)
+		status["commits"] = unpushedCommits
+	}
+
+	// Check if there are uncommitted changes
+	changedFiles, err := g.GetChangedFiles()
+	if err == nil {
+		status["uncommitted_changes"] = len(changedFiles)
+		status["changed_files"] = changedFiles
+	}
+
+	// Check remote URL
+	remoteURL, err := g.GetRemoteURL()
+	if err == nil {
+		status["remote_url"] = remoteURL
+	}
+
+	return status, nil
+}
+
 // PullFromRemote pulls changes from remote repository
 func (g *GitService) PullFromRemote() error {
 	if !g.IsGitRepo() {

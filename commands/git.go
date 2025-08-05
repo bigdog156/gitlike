@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"os/exec"
 	"strings"
 	"time"
 	"todo-cli/git"
@@ -223,11 +224,32 @@ var gitCommitCmd = &cobra.Command{
 		autoPush, _ := cmd.Flags().GetBool("push")
 		if autoPush {
 			fmt.Println("Pushing to Git remote...")
-			err = gitService.PushToRemote()
+			
+			// Get push status before pushing
+			pushStatus, err := gitService.GetPushStatus()
+			if err == nil {
+				if unpushedCount, ok := pushStatus["unpushed_commits"].(int); ok && unpushedCount > 0 {
+					fmt.Printf("📤 Pushing %d commits to remote...\n", unpushedCount)
+				}
+			}
+			
+			output, err := gitService.PushToRemoteWithDetails()
 			if err != nil {
 				fmt.Printf("Git push failed: %v\n", err)
+				if strings.Contains(err.Error(), "no upstream branch") {
+					fmt.Println("💡 Tip: Use --set-upstream to establish tracking")
+				}
 			} else {
 				fmt.Println("✅ Pushed to Git remote")
+				// Show push output if it contains useful info
+				if strings.Contains(output, "->") {
+					lines := strings.Split(output, "\n")
+					for _, line := range lines {
+						if strings.Contains(line, "->") || strings.Contains(line, "branch") {
+							fmt.Printf("   %s\n", line)
+						}
+					}
+				}
 			}
 		}
 	},
@@ -353,9 +375,225 @@ var gitBranchCmd = &cobra.Command{
 	},
 }
 
+var gitPushCmd = &cobra.Command{
+	Use:   "push",
+	Short: "Push Git commits to remote repository",
+	Run: func(cmd *cobra.Command, args []string) {
+		if !gitService.IsGitRepo() {
+			fmt.Println("Error: Not in a Git repository")
+			return
+		}
+
+		repo, err := storage_instance.LoadRepository()
+		if err != nil {
+			fmt.Printf("Error loading repository: %v\n", err)
+			return
+		}
+
+		if !repo.GitIntegration.Enabled {
+			fmt.Println("Git integration not enabled. Run 'todo git init' first.")
+			return
+		}
+
+		// Get push status
+		fmt.Println("Checking push status...")
+		pushStatus, err := gitService.GetPushStatus()
+		if err != nil {
+			fmt.Printf("Error getting push status: %v\n", err)
+			return
+		}
+
+		currentBranch := pushStatus["current_branch"].(string)
+		fmt.Printf("📍 Current branch: %s\n", currentBranch)
+
+		if remoteURL, ok := pushStatus["remote_url"].(string); ok {
+			fmt.Printf("🌐 Remote: %s\n", remoteURL)
+		}
+
+		// Check for uncommitted changes
+		if uncommittedCount, ok := pushStatus["uncommitted_changes"].(int); ok && uncommittedCount > 0 {
+			fmt.Printf("⚠️  You have %d uncommitted changes\n", uncommittedCount)
+			
+			if changedFiles, ok := pushStatus["changed_files"].([]string); ok && len(changedFiles) <= 5 {
+				for _, file := range changedFiles {
+					fmt.Printf("   - %s\n", file)
+				}
+			}
+			
+			autoCommit, _ := cmd.Flags().GetBool("commit")
+			if autoCommit {
+				fmt.Println("🔄 Auto-committing changes...")
+				commitMsg := "Auto-commit before push"
+				err = gitService.CommitChanges(commitMsg)
+				if err != nil {
+					fmt.Printf("Auto-commit failed: %v\n", err)
+					return
+				}
+				fmt.Println("✅ Changes committed")
+			} else {
+				fmt.Println("💡 Use --commit to auto-commit changes before push")
+				fmt.Println("   Or manually commit with: git add . && git commit -m \"message\"")
+			}
+		}
+
+		// Check for unpushed commits
+		unpushedCount := 0
+		if count, ok := pushStatus["unpushed_commits"].(int); ok {
+			unpushedCount = count
+		}
+
+		if unpushedCount == 0 {
+			fmt.Println("✨ Nothing to push - branch is up to date")
+			return
+		}
+
+		fmt.Printf("📤 Found %d unpushed commits\n", unpushedCount)
+		
+		// Show commits to be pushed
+		if commits, ok := pushStatus["commits"].([]models.Commit); ok && len(commits) > 0 {
+			fmt.Println("Commits to push:")
+			for i, commit := range commits {
+				if i >= 3 { // Limit display to first 3 commits
+					fmt.Printf("   ... and %d more commits\n", len(commits)-3)
+					break
+				}
+				fmt.Printf("   %s %s (by %s)\n", commit.ID, commit.Message, commit.Author)
+			}
+		}
+
+		// Perform the push
+		fmt.Println("🚀 Pushing to remote...")
+		output, err := gitService.PushToRemoteWithDetails()
+		if err != nil {
+			fmt.Printf("❌ Push failed: %v\n", err)
+			
+			// Provide helpful error messages
+			errorStr := err.Error()
+			if strings.Contains(errorStr, "no upstream branch") {
+				fmt.Println("💡 No upstream branch set. Setting up tracking...")
+				// This is handled in PushToRemoteWithDetails
+			} else if strings.Contains(errorStr, "rejected") {
+				fmt.Println("💡 Push rejected. Try pulling first: git pull")
+			} else if strings.Contains(errorStr, "authentication") {
+				fmt.Println("💡 Authentication failed. Check your Git credentials")
+			}
+			return
+		}
+
+		fmt.Println("✅ Successfully pushed to remote!")
+		
+		// Parse and display push output
+		if output != "" {
+			lines := strings.Split(output, "\n")
+			for _, line := range lines {
+				line = strings.TrimSpace(line)
+				if line == "" {
+					continue
+				}
+				
+				if strings.Contains(line, "->") {
+					fmt.Printf("   📌 %s\n", line)
+				} else if strings.Contains(line, "branch") && strings.Contains(line, "set up to track") {
+					fmt.Printf("   🔗 %s\n", line)
+				} else if strings.Contains(line, "objects") || strings.Contains(line, "Delta compression") {
+					fmt.Printf("   📊 %s\n", line)
+				}
+			}
+		}
+
+		// Update last sync time
+		repo.GitIntegration.LastGitSync = time.Now()
+		storage_instance.SaveRepository(repo)
+	},
+}
+
+var gitPullCmd = &cobra.Command{
+	Use:   "pull",
+	Short: "Pull changes from Git remote repository",
+	Run: func(cmd *cobra.Command, args []string) {
+		if !gitService.IsGitRepo() {
+			fmt.Println("Error: Not in a Git repository")
+			return
+		}
+
+		repo, err := storage_instance.LoadRepository()
+		if err != nil {
+			fmt.Printf("Error loading repository: %v\n", err)
+			return
+		}
+
+		if !repo.GitIntegration.Enabled {
+			fmt.Println("Git integration not enabled. Run 'todo git init' first.")
+			return
+		}
+
+		currentBranch, _ := gitService.GetCurrentBranch()
+		fmt.Printf("📍 Pulling changes for branch: %s\n", currentBranch)
+
+		if remoteURL, err := gitService.GetRemoteURL(); err == nil {
+			fmt.Printf("🌐 From remote: %s\n", remoteURL)
+		}
+
+		// Check for uncommitted changes
+		changedFiles, err := gitService.GetChangedFiles()
+		if err == nil && len(changedFiles) > 0 {
+			fmt.Printf("⚠️  You have %d uncommitted changes\n", len(changedFiles))
+			fmt.Println("💡 Consider committing or stashing changes before pull")
+			
+			stash, _ := cmd.Flags().GetBool("stash")
+			if stash {
+				fmt.Println("📦 Stashing changes...")
+				stashCmd := exec.Command("git", "stash", "push", "-m", "Auto-stash before pull")
+				stashCmd.Dir = gitService.GetRepoPath()
+				_, err := stashCmd.CombinedOutput()
+				if err != nil {
+					fmt.Printf("Stash failed: %v\n", err)
+					return
+				}
+				fmt.Println("✅ Changes stashed")
+			}
+		}
+
+		// Perform the pull
+		fmt.Println("⬇️  Pulling from remote...")
+		err = gitService.PullFromRemote()
+		if err != nil {
+			fmt.Printf("❌ Pull failed: %v\n", err)
+			
+			if strings.Contains(err.Error(), "merge conflict") {
+				fmt.Println("💡 Merge conflicts detected. Resolve conflicts and commit.")
+			} else if strings.Contains(err.Error(), "diverged") {
+				fmt.Println("💡 Branches have diverged. Consider rebasing or merging.")
+			}
+			return
+		}
+
+		fmt.Println("✅ Successfully pulled from remote!")
+
+		// Auto-sync todo branches if requested
+		autoSync, _ := cmd.Flags().GetBool("sync")
+		if autoSync {
+			fmt.Println("🔄 Auto-syncing todo branches...")
+			err = gitService.SyncWithGit(repo)
+			if err != nil {
+				fmt.Printf("Warning: Todo sync failed: %v\n", err)
+			} else {
+				fmt.Println("✅ Todo branches synchronized")
+			}
+		}
+
+		// Update last sync time
+		repo.GitIntegration.LastGitSync = time.Now()
+		storage_instance.SaveRepository(repo)
+	},
+}
+
 func init() {
 	// Add flags
 	gitCommitCmd.Flags().BoolP("push", "p", false, "Auto-push to Git remote after commit")
+	gitPushCmd.Flags().BoolP("commit", "c", false, "Auto-commit changes before push")
+	gitPullCmd.Flags().BoolP("stash", "s", false, "Auto-stash changes before pull")
+	gitPullCmd.Flags().BoolP("sync", "y", false, "Auto-sync todo branches after pull")
 
 	// Add subcommands
 	GitCmd.AddCommand(gitInitCmd)
@@ -363,4 +601,6 @@ func init() {
 	GitCmd.AddCommand(gitSyncCmd)
 	GitCmd.AddCommand(gitCommitCmd)
 	GitCmd.AddCommand(gitBranchCmd)
+	GitCmd.AddCommand(gitPushCmd)
+	GitCmd.AddCommand(gitPullCmd)
 }
