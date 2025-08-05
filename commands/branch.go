@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"time"
+	"todo-cli/git"
 	"todo-cli/models"
 	"todo-cli/remote"
 
@@ -130,7 +131,19 @@ var branchSwitchCmd = &cobra.Command{
 
 		fmt.Printf("Switched to branch: %s\n", branchName)
 
-		// Auto-sync if requested
+		// Auto-sync with Git if enabled
+		if repo.GitIntegration.Enabled && repo.GitIntegration.AutoSync {
+			gitService := git.NewGitService()
+			if gitService.IsGitRepo() {
+				fmt.Println("Auto-syncing with Git...")
+				err = gitService.CheckoutBranch(branchName)
+				if err != nil {
+					fmt.Printf("Git checkout failed: %v\n", err)
+				} else {
+					fmt.Printf("✅ Git branch synchronized: %s\n", branchName)
+				}
+			}
+		} // Auto-sync if requested
 		if sync && len(repo.Remotes) > 0 {
 			fmt.Println("Syncing with remote...")
 			targetRemote := repo.Remotes[0]

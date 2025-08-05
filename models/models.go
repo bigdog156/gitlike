@@ -43,10 +43,22 @@ type Remote struct {
 
 // Repository represents the entire todo repository
 type Repository struct {
-	Branches      []Branch  `json:"branches"`
-	Commits       []Commit  `json:"commits"`
-	CurrentBranch string    `json:"current_branch"`
-	NextTodoID    int       `json:"next_todo_id"`
-	Remotes       []Remote  `json:"remotes"`
-	LastSync      time.Time `json:"last_sync"`
+	Branches       []Branch  `json:"branches"`
+	Commits        []Commit  `json:"commits"`
+	CurrentBranch  string    `json:"current_branch"`
+	NextTodoID     int       `json:"next_todo_id"`
+	Remotes        []Remote  `json:"remotes"`
+	LastSync       time.Time `json:"last_sync"`
+	GitIntegration GitConfig `json:"git_integration"`
+}
+
+// GitConfig holds Git integration settings
+type GitConfig struct {
+	Enabled        bool      `json:"enabled"`
+	AutoSync       bool      `json:"auto_sync"`
+	RepoPath       string    `json:"repo_path"`
+	RemoteURL      string    `json:"remote_url"`
+	LastGitSync    time.Time `json:"last_git_sync"`
+	AutoCommit     bool      `json:"auto_commit"`
+	CommitTemplate string    `json:"commit_template"`
 }

@@ -52,6 +52,15 @@ func (s *Storage) LoadRepository() (*models.Repository, error) {
 			NextTodoID:    1,
 			Remotes:       []models.Remote{},
 			LastSync:      time.Time{},
+			GitIntegration: models.GitConfig{
+				Enabled:        false,
+				AutoSync:       false,
+				RepoPath:       "",
+				RemoteURL:      "",
+				LastGitSync:    time.Time{},
+				AutoCommit:     false,
+				CommitTemplate: "todo: {{.Message}}",
+			},
 		}
 		s.SaveRepository(repo)
 		return repo, nil
