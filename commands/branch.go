@@ -159,11 +159,78 @@ var branchSwitchCmd = &cobra.Command{
 	},
 }
 
+var branchDeleteCmd = &cobra.Command{
+	Use:   "delete [branch_name]",
+	Short: "Delete a branch",
+	Args:  cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		branchName := args[0]
+		force, _ := cmd.Flags().GetBool("force")
+
+		repo, err := storage_instance.LoadRepository()
+		if err != nil {
+			fmt.Printf("Error loading repository: %v\n", err)
+			return
+		}
+
+		// Prevent deleting the current branch
+		if repo.CurrentBranch == branchName {
+			fmt.Printf("❌ Cannot delete the current branch '%s'. Switch to another branch first.\n", branchName)
+			return
+		}
+
+		// Prevent deleting main branch unless forced
+		if branchName == "main" && !force {
+			fmt.Printf("❌ Cannot delete 'main' branch. Use --force flag if you really want to delete it.\n")
+			return
+		}
+
+		// Find the branch to delete
+		branchIndex := -1
+		var branchToDelete *models.Branch
+		for i, branch := range repo.Branches {
+			if branch.Name == branchName {
+				branchIndex = i
+				branchToDelete = &branch
+				break
+			}
+		}
+
+		if branchIndex == -1 {
+			fmt.Printf("❌ Branch '%s' does not exist\n", branchName)
+			return
+		}
+
+		// Check if branch has todos and warn user
+		if len(branchToDelete.Todos) > 0 && !force {
+			fmt.Printf("⚠️  Branch '%s' has %d todos. Use --force flag to delete anyway.\n", branchName, len(branchToDelete.Todos))
+			return
+		}
+
+		// Remove the branch from the slice
+		repo.Branches = append(repo.Branches[:branchIndex], repo.Branches[branchIndex+1:]...)
+
+		err = storage_instance.SaveRepository(repo)
+		if err != nil {
+			fmt.Printf("Error saving repository: %v\n", err)
+			return
+		}
+
+		if len(branchToDelete.Todos) > 0 {
+			fmt.Printf("✅ Deleted branch '%s' (removed %d todos)\n", branchName, len(branchToDelete.Todos))
+		} else {
+			fmt.Printf("✅ Deleted branch '%s'\n", branchName)
+		}
+	},
+}
+
 func init() {
 	// Add flags
 	branchSwitchCmd.Flags().BoolP("sync", "s", false, "Sync with remote when switching branches")
+	branchDeleteCmd.Flags().BoolP("force", "f", false, "Force delete branch even if it has todos or is the main branch")
 
 	BranchCmd.AddCommand(branchCreateCmd)
 	BranchCmd.AddCommand(branchListCmd)
 	BranchCmd.AddCommand(branchSwitchCmd)
+	BranchCmd.AddCommand(branchDeleteCmd)
 }

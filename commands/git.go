@@ -224,7 +224,7 @@ var gitCommitCmd = &cobra.Command{
 		autoPush, _ := cmd.Flags().GetBool("push")
 		if autoPush {
 			fmt.Println("Pushing to Git remote...")
-			
+
 			// Get push status before pushing
 			pushStatus, err := gitService.GetPushStatus()
 			if err == nil {
@@ -232,7 +232,7 @@ var gitCommitCmd = &cobra.Command{
 					fmt.Printf("📤 Pushing %d commits to remote...\n", unpushedCount)
 				}
 			}
-			
+
 			output, err := gitService.PushToRemoteWithDetails()
 			if err != nil {
 				fmt.Printf("Git push failed: %v\n", err)
@@ -413,13 +413,13 @@ var gitPushCmd = &cobra.Command{
 		// Check for uncommitted changes
 		if uncommittedCount, ok := pushStatus["uncommitted_changes"].(int); ok && uncommittedCount > 0 {
 			fmt.Printf("⚠️  You have %d uncommitted changes\n", uncommittedCount)
-			
+
 			if changedFiles, ok := pushStatus["changed_files"].([]string); ok && len(changedFiles) <= 5 {
 				for _, file := range changedFiles {
 					fmt.Printf("   - %s\n", file)
 				}
 			}
-			
+
 			autoCommit, _ := cmd.Flags().GetBool("commit")
 			if autoCommit {
 				fmt.Println("🔄 Auto-committing changes...")
@@ -448,7 +448,7 @@ var gitPushCmd = &cobra.Command{
 		}
 
 		fmt.Printf("📤 Found %d unpushed commits\n", unpushedCount)
-		
+
 		// Show commits to be pushed
 		if commits, ok := pushStatus["commits"].([]models.Commit); ok && len(commits) > 0 {
 			fmt.Println("Commits to push:")
@@ -466,7 +466,7 @@ var gitPushCmd = &cobra.Command{
 		output, err := gitService.PushToRemoteWithDetails()
 		if err != nil {
 			fmt.Printf("❌ Push failed: %v\n", err)
-			
+
 			// Provide helpful error messages
 			errorStr := err.Error()
 			if strings.Contains(errorStr, "no upstream branch") {
@@ -481,7 +481,7 @@ var gitPushCmd = &cobra.Command{
 		}
 
 		fmt.Println("✅ Successfully pushed to remote!")
-		
+
 		// Parse and display push output
 		if output != "" {
 			lines := strings.Split(output, "\n")
@@ -490,7 +490,7 @@ var gitPushCmd = &cobra.Command{
 				if line == "" {
 					continue
 				}
-				
+
 				if strings.Contains(line, "->") {
 					fmt.Printf("   📌 %s\n", line)
 				} else if strings.Contains(line, "branch") && strings.Contains(line, "set up to track") {
@@ -539,7 +539,7 @@ var gitPullCmd = &cobra.Command{
 		if err == nil && len(changedFiles) > 0 {
 			fmt.Printf("⚠️  You have %d uncommitted changes\n", len(changedFiles))
 			fmt.Println("💡 Consider committing or stashing changes before pull")
-			
+
 			stash, _ := cmd.Flags().GetBool("stash")
 			if stash {
 				fmt.Println("📦 Stashing changes...")
@@ -559,7 +559,7 @@ var gitPullCmd = &cobra.Command{
 		err = gitService.PullFromRemote()
 		if err != nil {
 			fmt.Printf("❌ Pull failed: %v\n", err)
-			
+
 			if strings.Contains(err.Error(), "merge conflict") {
 				fmt.Println("💡 Merge conflicts detected. Resolve conflicts and commit.")
 			} else if strings.Contains(err.Error(), "diverged") {
