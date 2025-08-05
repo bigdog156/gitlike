@@ -3,11 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"gitlike/models"
 	"io"
 	"log"
 	"net/http"
 	"os"
-	"todo-cli/models"
 )
 
 const dataFile = "server_repository.json"

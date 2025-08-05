@@ -3,10 +3,11 @@ package commands
 import (
 	"crypto/sha1"
 	"fmt"
+	"gitlike/models"
 	"os/user"
 	"strings"
 	"time"
-	"todo-cli/models"
+
 	"github.com/spf13/cobra"
 )
 

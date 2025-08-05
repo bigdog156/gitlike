@@ -2,42 +2,59 @@ package main
 
 import (
 	"fmt"
+	"gitlike/commands"
 	"os"
-	"todo-cli/commands"
 
 	"github.com/spf13/cobra"
 )
 
+// Version information (set via ldflags during build)
+var version = "dev"
+
 // Root command
 var rootCmd = &cobra.Command{
-	Use:   "todo",
-	Short: "Todo CLI app with branch, commit, and merge functionality",
-	Long: `A todo CLI application that helps developers track tasks with Git-like branch, commit, and merge operations.
+	Use:   "gitlike",
+	Short: "GitLike CLI app with branch, commit, and merge functionality",
+	Long: `A GitLike CLI application that helps developers track tasks with Git-like branch, commit, and merge operations.
     
 Examples:
-  todo branch create feature-auth
-  todo todo add "Implement user login" -d "Add JWT authentication" -p high
-  todo todo update 1 completed
-  todo commit create "Implement user authentication"
-  todo merge feature-auth`,
+  gitlike branch create feature-auth
+  gitlike todo add "Implement user login" -d "Add JWT authentication" -p high
+  gitlike todo update 1 completed
+  gitlike commit create "Implement user authentication"
+  gitlike merge feature-auth`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println(`Todo CLI - Git-like task management
+		fmt.Println(`GitLike CLI - Git-like task management
 
 Usage:
-  todo [command]
+  gitlike [command]
 
 Available Commands:
-  branch      Branch related commands (create, list, switch)
+  branch      Branch related commands (create, list, switch, delete)
   todo        Todo related commands (add, list, update)
   commit      Commit related commands (create, list, show)
   merge       Merge a branch into current branch
+  git         Git integration commands (push, status)
+  remote      Remote repository commands (add, list, remove)
   help        Help about any command
 
-Use "todo [command] --help" for more information about a command.`)
+Use "gitlike [command] --help" for more information about a command.`)
+	},
+}
+
+// Version command
+var versionCmd = &cobra.Command{
+	Use:   "version",
+	Short: "Print the version number",
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Printf("GitLike CLI v%s\n", version)
 	},
 }
 
 func main() {
+	// Add version command
+	rootCmd.AddCommand(versionCmd)
+
 	// Add all command groups
 	rootCmd.AddCommand(commands.BranchCmd)
 	rootCmd.AddCommand(commands.TodoCmd)

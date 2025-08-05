@@ -1,4 +1,4 @@
-# Todo CLI Installation Guide
+# GitLike CLI Installation Guide
 
 ## Prerequisites
 - Go 1.19 or higher installed on your system
@@ -10,11 +10,11 @@
 ```bash
 # Option A: If you have the code in a git repository
 git clone <your-repo-url>
-cd todocli
+cd gitlike
 
 # Option B: Copy the source files manually to a new directory
-mkdir todocli
-cd todocli
+mkdir gitlike
+cd gitlike
 # Copy all .go files and go.mod, go.sum
 ```
 
@@ -26,23 +26,23 @@ go mod tidy
 ### Step 3: Build the application
 ```bash
 # Build for current platform
-go build -o todo-cli
+go build -o gitlike
 
 # Build for specific platforms
 # For Linux
-GOOS=linux GOARCH=amd64 go build -o todo-cli-linux
+GOOS=linux GOARCH=amd64 go build -o gitlike-linux
 
 # For Windows
-GOOS=windows GOARCH=amd64 go build -o todo-cli.exe
+GOOS=windows GOARCH=amd64 go build -o gitlike.exe
 
 # For macOS
-GOOS=darwin GOARCH=amd64 go build -o todo-cli-macos
+GOOS=darwin GOARCH=amd64 go build -o gitlike-macos
 ```
 
 ### Step 4: Install globally (optional)
 ```bash
 # Copy to a directory in your PATH
-sudo mv todo-cli /usr/local/bin/
+sudo mv gitlike /usr/local/bin/
 
 # Or add current directory to PATH
 echo 'export PATH=$PATH:$(pwd)' >> ~/.bashrc
@@ -57,32 +57,32 @@ source ~/.bashrc
 mkdir releases
 
 # Linux
-GOOS=linux GOARCH=amd64 go build -o releases/todo-cli-linux-amd64
-GOOS=linux GOARCH=arm64 go build -o releases/todo-cli-linux-arm64
+GOOS=linux GOARCH=amd64 go build -o releases/gitlike-linux-amd64
+GOOS=linux GOARCH=arm64 go build -o releases/gitlike-linux-arm64
 
 # Windows
-GOOS=windows GOARCH=amd64 go build -o releases/todo-cli-windows-amd64.exe
+GOOS=windows GOARCH=amd64 go build -o releases/gitlike-windows-amd64.exe
 
 # macOS
-GOOS=darwin GOARCH=amd64 go build -o releases/todo-cli-darwin-amd64
-GOOS=darwin GOARCH=arm64 go build -o releases/todo-cli-darwin-arm64
+GOOS=darwin GOARCH=amd64 go build -o releases/gitlike-darwin-amd64
+GOOS=darwin GOARCH=arm64 go build -o releases/gitlike-darwin-arm64
 ```
 
 ### Step 2: Transfer and install
 ```bash
 # Download/copy the appropriate binary for your system
 # Make it executable (Linux/macOS)
-chmod +x todo-cli-linux-amd64
+chmod +x gitlike-linux-amd64
 
 # Move to PATH
-sudo mv todo-cli-linux-amd64 /usr/local/bin/todo-cli
+sudo mv gitlike-linux-amd64 /usr/local/bin/gitlike
 ```
 
 ## Method 3: Go Install (if published)
 
 If you publish your module to a Git repository:
 ```bash
-go install github.com/yourusername/todocli@latest
+go install github.com/yourusername/gitlike@latest
 ```
 
 ## Usage After Installation
@@ -90,28 +90,28 @@ go install github.com/yourusername/todocli@latest
 ### Basic Commands
 ```bash
 # Check installation
-todo-cli --help
+gitlike --help
 
 # Create a branch
-todo-cli branch create feature-new
+gitlike branch create feature-new
 
 # Add a todo
-todo-cli todo add "My first task" -d "Task description" -p high
+gitlike todo add "My first task" -d "Task description" -p high
 
 # List todos
-todo-cli todo list
+gitlike todo list
 
 # Update todo status
-todo-cli todo update 1 completed
+gitlike todo update 1 completed
 
 # Create commit
-todo-cli commit create "Complete first task"
+gitlike commit create "Complete first task"
 
 # Switch branches
-todo-cli branch switch main
+gitlike branch switch main
 
 # Merge branches
-todo-cli merge feature-new
+gitlike merge feature-new
 ```
 
 ### Data Location
@@ -124,16 +124,16 @@ todo-cli merge feature-new
 ### Permission Issues
 ```bash
 # If you get permission denied
-chmod +x todo-cli
+chmod +x gitlike
 ```
 
 ### Command not found
 ```bash
 # Check if binary is in PATH
-which todo-cli
+which gitlike
 
 # Add to PATH if needed
-export PATH=$PATH:/path/to/todo-cli/directory
+export PATH=$PATH:/path/to/gitlike/directory
 ```
 
 ### Dependencies
@@ -146,16 +146,16 @@ go mod verify
 ## Platform-Specific Notes
 
 ### Windows
-- Use `todo-cli.exe` as the binary name
+- Use `gitlike.exe` as the binary name
 - Add to PATH via System Properties > Environment Variables
 
 ### Linux/Ubuntu
 ```bash
 # Install via package manager (if you create .deb package)
-sudo dpkg -i todo-cli.deb
+sudo dpkg -i gitlike.deb
 
 # Or manual installation
-sudo cp todo-cli /usr/local/bin/
+sudo cp gitlike /usr/local/bin/
 ```
 
 ### macOS
@@ -163,6 +163,13 @@ sudo cp todo-cli /usr/local/bin/
 # For Apple Silicon Macs, use arm64 binary
 # For Intel Macs, use amd64 binary
 
-# Install via Homebrew (if you create a formula)
-brew install todo-cli
+# Manual installation
+sudo cp gitlike /usr/local/bin/
+
+# Install via Homebrew (once published to a tap)
+brew tap bigdog156/gitlike
+brew install gitlike
+
+# Or if published to Homebrew core
+brew install gitlike
 ```

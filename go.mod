@@ -1,4 +1,4 @@
-module todo-cli
+module gitlike
 
 go 1.23.2
 

@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"todo-cli/models"
+	"gitlike/models"
 )
 
 // GitService handles integration with local Git repository

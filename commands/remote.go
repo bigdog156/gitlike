@@ -2,8 +2,8 @@ package commands
 
 import (
 	"fmt"
-	"todo-cli/models"
-	"todo-cli/remote"
+	"gitlike/models"
+	"gitlike/remote"
 
 	"github.com/spf13/cobra"
 )

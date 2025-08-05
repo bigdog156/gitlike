@@ -1,0 +1,48 @@
+project_name: gitlike
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -X main.version={{.Version}}
+
+archives:
+  - format: tar.gz
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+    format_overrides:
+      - goos: windows
+        format: zip
+
+brews:
+  - name: gitlike
+    tap:
+      owner: bigdog156
+      name: homebrew-gitlike
+    homepage: "https://github.com/bigdog156/gitlike"
+    description: "GitLike CLI with Git-like workflow for developers"
+    license: "MIT"
+    test: |
+      system "#{bin}/gitlike --help"
+      assert_match version.to_s, shell_output("#{bin}/gitlike --version 2>&1")
+    install: |
+      bin.install "gitlike"
+
+release:
+  github:
+    owner: bigdog156
+    name: gitlike

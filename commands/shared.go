@@ -1,5 +1,5 @@
 package commands
 
-import "todo-cli/storage"
+import "gitlike/storage"
 
 var storage_instance = storage.NewStorage()
