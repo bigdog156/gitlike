@@ -102,7 +102,7 @@ func (s *Server) handlePull(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(repo)
-	
+
 	fmt.Printf("Served pull: %d branches, %d commits\n", len(repo.Branches), len(repo.Commits))
 }
 
@@ -114,10 +114,10 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	status := map[string]interface{}{
-		"branches": len(repo.Branches),
-		"commits":  len(repo.Commits),
+		"branches":       len(repo.Branches),
+		"commits":        len(repo.Commits),
 		"current_branch": repo.CurrentBranch,
-		"last_sync": repo.LastSync,
+		"last_sync":      repo.LastSync,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -163,6 +163,6 @@ func main() {
 
 	fmt.Printf("Todo CLI server starting on port %s\n", port)
 	fmt.Printf("Access the server at: http://localhost:%s\n", port)
-	
+
 	log.Fatal(http.ListenAndServe(":"+port, nil))
 }

@@ -44,7 +44,7 @@ func main() {
 	rootCmd.AddCommand(commands.CommitCmd)
 	rootCmd.AddCommand(commands.MergeCmd)
 	rootCmd.AddCommand(commands.RemoteCmd)
-	
+
 	// Add standalone remote commands
 	rootCmd.AddCommand(commands.PushCmd)
 	rootCmd.AddCommand(commands.PullCmd)

@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	dataDir      = ".tododata"
-	repoFile     = "repository.json"
+	dataDir  = ".tododata"
+	repoFile = "repository.json"
 )
 
 // Storage handles data persistence
@@ -23,10 +23,10 @@ type Storage struct {
 func NewStorage() *Storage {
 	homeDir, _ := os.UserHomeDir()
 	dataPath := filepath.Join(homeDir, dataDir)
-	
+
 	// Create data directory if it doesn't exist
 	os.MkdirAll(dataPath, 0755)
-	
+
 	return &Storage{
 		dataPath: dataPath,
 	}
@@ -35,7 +35,7 @@ func NewStorage() *Storage {
 // LoadRepository loads the repository from disk
 func (s *Storage) LoadRepository() (*models.Repository, error) {
 	repoPath := filepath.Join(s.dataPath, repoFile)
-	
+
 	// If file doesn't exist, create a new repository
 	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
 		repo := &models.Repository{
@@ -56,35 +56,35 @@ func (s *Storage) LoadRepository() (*models.Repository, error) {
 		s.SaveRepository(repo)
 		return repo, nil
 	}
-	
+
 	data, err := os.ReadFile(repoPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read repository: %w", err)
 	}
-	
+
 	var repo models.Repository
 	err = json.Unmarshal(data, &repo)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse repository: %w", err)
 	}
-	
+
 	return &repo, nil
 }
 
 // SaveRepository saves the repository to disk
 func (s *Storage) SaveRepository(repo *models.Repository) error {
 	repoPath := filepath.Join(s.dataPath, repoFile)
-	
+
 	data, err := json.MarshalIndent(repo, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal repository: %w", err)
 	}
-	
+
 	err = os.WriteFile(repoPath, data, 0644)
 	if err != nil {
 		return fmt.Errorf("failed to write repository: %w", err)
 	}
-	
+
 	return nil
 }
 

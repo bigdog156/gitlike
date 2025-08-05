@@ -43,10 +43,10 @@ type Remote struct {
 
 // Repository represents the entire todo repository
 type Repository struct {
-	Branches      []Branch `json:"branches"`
-	Commits       []Commit `json:"commits"`
-	CurrentBranch string   `json:"current_branch"`
-	NextTodoID    int      `json:"next_todo_id"`
-	Remotes       []Remote `json:"remotes"`
+	Branches      []Branch  `json:"branches"`
+	Commits       []Commit  `json:"commits"`
+	CurrentBranch string    `json:"current_branch"`
+	NextTodoID    int       `json:"next_todo_id"`
+	Remotes       []Remote  `json:"remotes"`
 	LastSync      time.Time `json:"last_sync"`
 }

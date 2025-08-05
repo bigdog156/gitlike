@@ -63,7 +63,7 @@ func (r *RemoteService) pushHTTP(remote models.Remote, repo *models.Repository) 
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	
+
 	// Add authentication if credentials are available
 	if username := os.Getenv("TODO_CLI_USERNAME"); username != "" {
 		if password := os.Getenv("TODO_CLI_PASSWORD"); password != "" {
