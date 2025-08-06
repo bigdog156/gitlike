@@ -6,14 +6,18 @@ import (
 
 // Todo represents a task
 type Todo struct {
-	ID          int       `json:"id"`
-	Title       string    `json:"title"`
-	Description string    `json:"description"`
-	Status      string    `json:"status"`   // "pending", "in-progress", "completed"
-	Priority    string    `json:"priority"` // "low", "medium", "high"
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-	BranchName  string    `json:"branch_name"`
+	ID          int        `json:"id"`
+	Title       string     `json:"title"`
+	Description string     `json:"description"`
+	Status      string     `json:"status"`   // "pending", "in-progress", "completed"
+	Priority    string     `json:"priority"` // "low", "medium", "high"
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
+	StartedAt   *time.Time `json:"started_at,omitempty"`   // When user started working on this task
+	CompletedAt *time.Time `json:"completed_at,omitempty"` // When task was completed
+	BranchName  string     `json:"branch_name"`
+	Commits     []string   `json:"commits"`   // Commit IDs that belong to this task
+	IsActive    bool       `json:"is_active"` // Whether this is the currently active task
 }
 
 // Branch represents a development branch
@@ -26,12 +30,13 @@ type Branch struct {
 
 // Commit represents a commit with todos
 type Commit struct {
-	ID        string    `json:"id"`
-	Message   string    `json:"message"`
-	Branch    string    `json:"branch"`
-	Todos     []int     `json:"todos"` // Todo IDs included in this commit
-	CreatedAt time.Time `json:"created_at"`
-	Author    string    `json:"author"`
+	ID         string    `json:"id"`
+	Message    string    `json:"message"`
+	Branch     string    `json:"branch"`
+	Todos      []int     `json:"todos"`                 // Todo IDs included in this commit
+	ActiveTodo *int      `json:"active_todo,omitempty"` // The active todo when this commit was made
+	CreatedAt  time.Time `json:"created_at"`
+	Author     string    `json:"author"`
 }
 
 // Remote represents a remote repository

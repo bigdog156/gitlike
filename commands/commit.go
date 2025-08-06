@@ -4,12 +4,21 @@ import (
 	"crypto/sha1"
 	"fmt"
 	"gitlike/models"
+	"os"
+	"os/exec"
 	"os/user"
 	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
 )
+
+// Helper function to check if current directory is a Git repository
+func isGitRepo() bool {
+	cmd := exec.Command("git", "rev-parse", "--git-dir")
+	err := cmd.Run()
+	return err == nil
+}
 
 var CommitCmd = &cobra.Command{
 	Use:   "commit",
@@ -18,10 +27,12 @@ var CommitCmd = &cobra.Command{
 
 var commitCreateCmd = &cobra.Command{
 	Use:   "create [message]",
-	Short: "Create a commit with completed todos",
+	Short: "Create a commit with todos and optionally commit to Git",
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		message := strings.Join(args, " ")
+		gitCommit, _ := cmd.Flags().GetBool("git")
+		autoAdd, _ := cmd.Flags().GetBool("add")
 
 		repo, err := storage_instance.LoadRepository()
 		if err != nil {
@@ -35,16 +46,43 @@ var commitCreateCmd = &cobra.Command{
 			return
 		}
 
-		// Find completed todos
+		// Find completed todos and active todo
 		var completedTodos []int
+		var activeTodo *models.Todo
+
 		for _, todo := range currentBranch.Todos {
 			if todo.Status == "completed" {
 				completedTodos = append(completedTodos, todo.ID)
 			}
+			if todo.IsActive {
+				activeTodo = &todo
+			}
 		}
 
-		if len(completedTodos) == 0 {
-			fmt.Println("No completed todos to commit")
+		// Determine which todos to include in commit
+		var todosToInclude []int
+		
+		if activeTodo != nil {
+			// Prioritize active todo
+			todosToInclude = append(todosToInclude, activeTodo.ID)
+			fmt.Printf("Including active todo #%d in commit: %s\n", activeTodo.ID, activeTodo.Title)
+			
+			// If there are also completed todos, ask if user wants to include them too
+			if len(completedTodos) > 0 {
+				fmt.Printf("Also found %d completed todos: %v\n", len(completedTodos), completedTodos)
+				fmt.Print("Include completed todos in this commit too? (y/N): ")
+				var response string
+				fmt.Scanln(&response)
+				if strings.ToLower(response) == "y" || strings.ToLower(response) == "yes" {
+					todosToInclude = append(todosToInclude, completedTodos...)
+				}
+			}
+		} else if len(completedTodos) > 0 {
+			// No active todo, use completed todos
+			todosToInclude = completedTodos
+			fmt.Printf("Including %d completed todos in commit\n", len(completedTodos))
+		} else {
+			fmt.Println("No todos to commit. Start working on a todo with 'gitlike todo start <id>' or complete one first.")
 			return
 		}
 
@@ -65,9 +103,41 @@ var commitCreateCmd = &cobra.Command{
 			ID:        commitID,
 			Message:   message,
 			Branch:    currentBranch.Name,
-			Todos:     completedTodos,
+			Todos:     todosToInclude,
 			CreatedAt: time.Now(),
 			Author:    author,
+		}
+
+		// Set active todo if there is one
+		if activeTodo != nil {
+			commit.ActiveTodo = &activeTodo.ID
+		}
+
+		repo.Commits = append(repo.Commits, commit)
+
+		// Link this commit to the todos (add commit ID to todo's commits list)
+		for i := range repo.Branches {
+			if repo.Branches[i].Name == currentBranch.Name {
+				for j := range repo.Branches[i].Todos {
+					for _, todoID := range todosToInclude {
+						if repo.Branches[i].Todos[j].ID == todoID {
+							// Add commit ID to todo's commit list if not already present
+							found := false
+							for _, commitID := range repo.Branches[i].Todos[j].Commits {
+								if commitID == commit.ID {
+									found = true
+									break
+								}
+							}
+							if !found {
+								repo.Branches[i].Todos[j].Commits = append(repo.Branches[i].Todos[j].Commits, commit.ID)
+							}
+							break
+						}
+					}
+				}
+				break
+			}
 		}
 
 		repo.Commits = append(repo.Commits, commit)
@@ -78,8 +148,93 @@ var commitCreateCmd = &cobra.Command{
 			return
 		}
 
-		fmt.Printf("Created commit %s: %s\n", commitID, message)
-		fmt.Printf("Committed %d completed todos\n", len(completedTodos))
+		fmt.Printf("✅ Created commit %s: %s\n", commitID, message)
+		fmt.Printf("📋 Linked to %d todos: %v\n", len(todosToInclude), todosToInclude)
+
+		if activeTodo != nil {
+			fmt.Printf("🎯 Active task: #%d %s\n", activeTodo.ID, activeTodo.Title)
+		}
+
+		// Git integration
+		if gitCommit {
+			fmt.Println("\n🔄 Committing to Git...")
+			
+			// Check if we're in a Git repository
+			if !isGitRepo() {
+				fmt.Println("⚠️  Not in a Git repository. Skipping Git commit.")
+				return
+			}
+
+			// Auto-add files if requested
+			if autoAdd {
+				fmt.Println("📁 Adding all changes to Git...")
+				gitAddCmd := exec.Command("git", "add", ".")
+				gitAddCmd.Dir, _ = os.Getwd()
+				if err := gitAddCmd.Run(); err != nil {
+					fmt.Printf("⚠️  Failed to add files to Git: %v\n", err)
+				} else {
+					fmt.Println("✅ Added all changes to Git")
+				}
+			}
+
+			// Create enhanced Git commit message with todo information
+			var gitMessage strings.Builder
+			gitMessage.WriteString(message)
+			
+			if len(todosToInclude) > 0 {
+				gitMessage.WriteString("\n\n")
+				if activeTodo != nil {
+					gitMessage.WriteString(fmt.Sprintf("Active Task: #%d %s\n", activeTodo.ID, activeTodo.Title))
+				}
+				
+				gitMessage.WriteString("GitLike Todos:\n")
+				currentBranch := storage_instance.GetCurrentBranch(repo)
+				for _, todoID := range todosToInclude {
+					for _, todo := range currentBranch.Todos {
+						if todo.ID == todoID {
+							gitMessage.WriteString(fmt.Sprintf("- #%d [%s] %s", todo.ID, todo.Priority, todo.Title))
+							if todo.Status == "completed" {
+								gitMessage.WriteString(" ✅")
+							} else if todo.IsActive {
+								gitMessage.WriteString(" 🎯")
+							}
+							gitMessage.WriteString("\n")
+							break
+						}
+					}
+				}
+				gitMessage.WriteString(fmt.Sprintf("\nGitLike Commit ID: %s", commitID))
+			}
+
+			// Execute Git commit
+			gitCommitCmd := exec.Command("git", "commit", "-m", gitMessage.String())
+			gitCommitCmd.Dir, _ = os.Getwd()
+			gitCommitCmd.Stdout = os.Stdout
+			gitCommitCmd.Stderr = os.Stderr
+			
+			if err := gitCommitCmd.Run(); err != nil {
+				fmt.Printf("⚠️  Git commit failed: %v\n", err)
+				fmt.Println("💡 You may need to stage your changes first with 'git add' or use the --add flag")
+			} else {
+				fmt.Println("✅ Successfully committed to Git!")
+				
+				// Get the actual Git commit hash
+				gitHashCmd := exec.Command("git", "rev-parse", "HEAD")
+				gitHashCmd.Dir, _ = os.Getwd()
+				if gitHashOutput, err := gitHashCmd.Output(); err == nil {
+					gitHash := strings.TrimSpace(string(gitHashOutput))
+					fmt.Printf("🔗 Git commit: %s\n", gitHash[:8])
+					
+					// Store the Git hash in the GitLike commit for reference
+					for i := range repo.Commits {
+						if repo.Commits[i].ID == commitID {
+							// We could add a GitHash field to the Commit model if needed
+							break
+						}
+					}
+				}
+			}
+		}
 	},
 }
 
@@ -158,6 +313,10 @@ var commitShowCmd = &cobra.Command{
 }
 
 func init() {
+	// Add flags for Git integration
+	commitCreateCmd.Flags().BoolP("git", "g", false, "Also commit to Git repository")
+	commitCreateCmd.Flags().BoolP("add", "a", false, "Automatically add all changes before Git commit (requires --git)")
+	
 	CommitCmd.AddCommand(commitCreateCmd)
 	CommitCmd.AddCommand(commitListCmd)
 	CommitCmd.AddCommand(commitShowCmd)

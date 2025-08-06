@@ -38,7 +38,12 @@ Available Commands:
   remote      Remote repository commands (add, list, remove)
   help        Help about any command
 
-Use "gitlike [command] --help" for more information about a command.`)
+Use "gitlike [command] --help" for more information about a command.
+  
+Quick Commands:
+  gitlike commit "message"     - Create GitLike commit and Git commit
+  gitlike todo start <id>      - Start working on a task
+  gitlike todo active          - Show current active task`)
 	},
 }
 
