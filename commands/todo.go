@@ -12,12 +12,13 @@ import (
 
 var TodoCmd = &cobra.Command{
 	Use:   "todo",
-	Short: "Todo related commands",
+	Short: "Todo related commands with Git-like syntax",
 }
 
-var todoAddCmd = &cobra.Command{
-	Use:   "add [title]",
-	Short: "Add a new todo",
+// GitLike syntax: gitlike todo create
+var todoCreateCmd = &cobra.Command{
+	Use:   "create [title]",
+	Short: "Create a new todo task",
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		title := strings.Join(args, " ")
@@ -63,7 +64,88 @@ var todoAddCmd = &cobra.Command{
 			return
 		}
 
-		fmt.Printf("Added todo #%d: %s\n", newTodo.ID, newTodo.Title)
+		fmt.Printf("Created todo #%d: %s\n", newTodo.ID, newTodo.Title)
+		if priority != "" {
+			fmt.Printf("Priority: %s\n", priority)
+		}
+		if description != "" {
+			fmt.Printf("Description: %s\n", description)
+		}
+	},
+}
+
+// GitLike syntax: gitlike todo done
+var todoDoneCmd = &cobra.Command{
+	Use:   "done [todo_id]",
+	Short: "Mark a todo as completed",
+	Args:  cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		todoIDStr := args[0]
+		todoID, err := strconv.Atoi(todoIDStr)
+		if err != nil {
+			fmt.Printf("Invalid todo ID: %s\n", todoIDStr)
+			return
+		}
+
+		repo, err := storage_instance.LoadRepository()
+		if err != nil {
+			fmt.Printf("Error loading repository: %v\n", err)
+			return
+		}
+
+		currentBranch := storage_instance.GetCurrentBranch(repo)
+		if currentBranch == nil {
+			fmt.Println("No current branch found")
+			return
+		}
+
+		// Find and update the todo
+		found := false
+		for i := range repo.Branches {
+			if repo.Branches[i].Name == currentBranch.Name {
+				for j := range repo.Branches[i].Todos {
+					if repo.Branches[i].Todos[j].ID == todoID {
+						repo.Branches[i].Todos[j].Status = "completed"
+						repo.Branches[i].Todos[j].UpdatedAt = time.Now()
+						if repo.Branches[i].Todos[j].CompletedAt == nil {
+							now := time.Now()
+							repo.Branches[i].Todos[j].CompletedAt = &now
+						}
+						found = true
+						break
+					}
+				}
+				break
+			}
+		}
+
+		if !found {
+			fmt.Printf("Todo #%d not found in current branch\n", todoID)
+			return
+		}
+
+		err = storage_instance.SaveRepository(repo)
+		if err != nil {
+			fmt.Printf("Error saving repository: %v\n", err)
+			return
+		}
+
+		fmt.Printf("✅ Todo #%d marked as completed\n", todoID)
+		
+		// Suggest next steps
+		fmt.Println("💡 Ready to commit your work:")
+		fmt.Printf("   gitlike add .\n")
+		fmt.Printf("   gitlike commit -m \"Complete todo #%d\"\n", todoID)
+	},
+}
+
+var todoAddCmd = &cobra.Command{
+	Use:   "add [title]",
+	Short: "Add a new todo (alias for create)",
+	Args:  cobra.MinimumNArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		// Just call todoCreateCmd
+		todoCreateCmd.Run(cmd, args)
 	},
 }
 
@@ -447,14 +529,21 @@ var todoHistoryCmd = &cobra.Command{
 }
 
 func init() {
+	// Add flags for create and add commands
+	todoCreateCmd.Flags().StringP("description", "d", "", "Todo description")
+	todoCreateCmd.Flags().StringP("priority", "p", "medium", "Todo priority (low, medium, high)")
+	
 	todoAddCmd.Flags().StringP("description", "d", "", "Todo description")
 	todoAddCmd.Flags().StringP("priority", "p", "medium", "Todo priority (low, medium, high)")
 
-	TodoCmd.AddCommand(todoAddCmd)
-	TodoCmd.AddCommand(todoListCmd)
-	TodoCmd.AddCommand(todoUpdateCmd)
-	TodoCmd.AddCommand(todoStartCmd)
-	TodoCmd.AddCommand(todoStopCmd)
-	TodoCmd.AddCommand(todoActiveCmd)
-	TodoCmd.AddCommand(todoHistoryCmd)
+	// Add all subcommands to TodoCmd
+	TodoCmd.AddCommand(todoCreateCmd)  // gitlike todo create
+	TodoCmd.AddCommand(todoDoneCmd)    // gitlike todo done
+	TodoCmd.AddCommand(todoAddCmd)     // gitlike todo add (alias)
+	TodoCmd.AddCommand(todoListCmd)    // gitlike todo list
+	TodoCmd.AddCommand(todoUpdateCmd)  // gitlike todo update
+	TodoCmd.AddCommand(todoStartCmd)   // gitlike todo start
+	TodoCmd.AddCommand(todoStopCmd)    // gitlike todo stop
+	TodoCmd.AddCommand(todoActiveCmd)  // gitlike todo active
+	TodoCmd.AddCommand(todoHistoryCmd) // gitlike todo history
 }
