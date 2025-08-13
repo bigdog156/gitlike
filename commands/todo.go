@@ -503,7 +503,7 @@ var todoHistoryCmd = &cobra.Command{
 			commitID := targetTodo.Commits[i]
 			for _, commit := range repo.Commits {
 				if commit.ID == commitID {
-					fmt.Printf("  🔸 %s (%s)\n", commit.ID[:8], commit.CreatedAt.Format("Jan 2, 15:04"))
+					fmt.Printf("  🔸 %s (%s)\n", commit.ID, commit.CreatedAt.Format("Jan 2, 15:04"))
 					fmt.Printf("     %s\n", commit.Message)
 					fmt.Printf("     by %s\n", commit.Author)
 					break

@@ -82,8 +82,8 @@ func main() {
 	rootCmd.AddCommand(commands.StatusCmd)       // gitlike status
 	rootCmd.AddCommand(commands.LogCmd)          // gitlike log
 	rootCmd.AddCommand(commands.CheckoutCmd)     // gitlike checkout
-	// rootCmd.AddCommand(commands.PushCmd)         // gitlike push (from remote.go)
-	// rootCmd.AddCommand(commands.PullCmd)         // gitlike pull (from remote.go)
+	rootCmd.AddCommand(commands.GitPushCmd)         // gitlike push (from remote.go)
+	rootCmd.AddCommand(commands.GitPullCmd)         // gitlike pull (from remote.go)
 
 	// Add branch command (Git-like: gitlike branch)
 	rootCmd.AddCommand(commands.BranchCmd)

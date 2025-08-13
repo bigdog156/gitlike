@@ -375,7 +375,7 @@ var gitBranchCmd = &cobra.Command{
 	},
 }
 
-var gitPushCmd = &cobra.Command{
+var GitPushCmd = &cobra.Command{
 	Use:   "push",
 	Short: "Push Git commits to remote repository",
 	Run: func(cmd *cobra.Command, args []string) {
@@ -507,7 +507,7 @@ var gitPushCmd = &cobra.Command{
 	},
 }
 
-var gitPullCmd = &cobra.Command{
+var GitPullCmd = &cobra.Command{
 	Use:   "pull",
 	Short: "Pull changes from Git remote repository",
 	Run: func(cmd *cobra.Command, args []string) {
@@ -591,9 +591,6 @@ var gitPullCmd = &cobra.Command{
 func init() {
 	// Add flags
 	gitCommitCmd.Flags().BoolP("push", "p", false, "Auto-push to Git remote after commit")
-	gitPushCmd.Flags().BoolP("commit", "c", false, "Auto-commit changes before push")
-	gitPullCmd.Flags().BoolP("stash", "s", false, "Auto-stash changes before pull")
-	gitPullCmd.Flags().BoolP("sync", "y", false, "Auto-sync todo branches after pull")
 
 	// Add subcommands
 	GitCmd.AddCommand(gitInitCmd)
@@ -601,6 +598,4 @@ func init() {
 	GitCmd.AddCommand(gitSyncCmd)
 	GitCmd.AddCommand(gitCommitCmd)
 	GitCmd.AddCommand(gitBranchCmd)
-	GitCmd.AddCommand(gitPushCmd)
-	GitCmd.AddCommand(gitPullCmd)
 }
