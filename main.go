@@ -76,14 +76,14 @@ func main() {
 	rootCmd.AddCommand(versionCmd)
 
 	// Add Git-like commands (primary interface)
-	rootCmd.AddCommand(commands.InitCmd)        // gitlike init
-	rootCmd.AddCommand(commands.AddCmd)         // gitlike add
+	rootCmd.AddCommand(commands.InitCmd)         // gitlike init
+	rootCmd.AddCommand(commands.AddCmd)          // gitlike add
 	rootCmd.AddCommand(commands.CommitDirectCmd) // gitlike commit -m
-	rootCmd.AddCommand(commands.StatusCmd)      // gitlike status
-	rootCmd.AddCommand(commands.LogCmd)         // gitlike log
-	rootCmd.AddCommand(commands.CheckoutCmd)    // gitlike checkout
-	rootCmd.AddCommand(commands.PushCmd)        // gitlike push (from remote.go)
-	rootCmd.AddCommand(commands.PullCmd)        // gitlike pull (from remote.go)
+	rootCmd.AddCommand(commands.StatusCmd)       // gitlike status
+	rootCmd.AddCommand(commands.LogCmd)          // gitlike log
+	rootCmd.AddCommand(commands.CheckoutCmd)     // gitlike checkout
+	rootCmd.AddCommand(commands.PushCmd)         // gitlike push (from remote.go)
+	rootCmd.AddCommand(commands.PullCmd)         // gitlike pull (from remote.go)
 
 	// Add branch command (Git-like: gitlike branch)
 	rootCmd.AddCommand(commands.BranchCmd)
@@ -92,8 +92,8 @@ func main() {
 	rootCmd.AddCommand(commands.TodoCmd)
 
 	// Add advanced command groups (for backwards compatibility and advanced features)
-	rootCmd.AddCommand(commands.CommitCmd)  // gitlike commit create/list/show
-	rootCmd.AddCommand(commands.GitCmd)     // gitlike git (integration commands)
+	rootCmd.AddCommand(commands.CommitCmd) // gitlike commit create/list/show
+	rootCmd.AddCommand(commands.GitCmd)    // gitlike git (integration commands)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println("Error:", err)
