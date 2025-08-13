@@ -5,10 +5,10 @@ class Gitlike < Formula
   
   if Hardware::CPU.arm?
     url "https://github.com/bigdog156/gitlike/releases/download/v1.0.0/gitlike-darwin-arm64"
-    sha256 "d85716fd5da1345a849d913957d572ca5fc48eb91f4db7466671f524174af630"
+    sha256 "7e4f3228da3555c21f11fc73b96f13e9ec9c7f1fcb42c7c3c418c0875250e196"
   else
     url "https://github.com/bigdog156/gitlike/releases/download/v1.0.0/gitlike-darwin-amd64"
-    sha256 "3c7c8b60e7cb799d75ec4e3a0ec949cd3d3b8c848f7ac2eaa920dba0f1fb8322"
+    sha256 "2509406fc062c00782b5a292eb104d2d321e4b638984b52fc9d5adb69f5d57f9"
   end
 
   def install
