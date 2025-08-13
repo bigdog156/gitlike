@@ -9,20 +9,14 @@ import (
 )
 
 // Version information (set via ldflags during build)
-var version = "dev"
+var version = "dev-1.0.0"
 
 // Root command
 var rootCmd = &cobra.Command{
 	Use:   "gitlike",
 	Short: "GitLike CLI app with branch, commit, and merge functionality",
 	Long: `A GitLike CLI application that helps developers track tasks with Git-like branch, commit, and merge operations.
-    
-Examples:
-  gitlike branch create feature-auth
-  gitlike todo add "Implement user login" -d "Add JWT authentication" -p high
-  gitlike todo update 1 completed
-  gitlike commit create "Implement user authentication"
-  gitlike merge feature-auth`,
+`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println(`GitLike CLI - Git-like task management
 
@@ -64,15 +58,15 @@ func main() {
 	rootCmd.AddCommand(commands.BranchCmd)
 	rootCmd.AddCommand(commands.TodoCmd)
 	rootCmd.AddCommand(commands.CommitCmd)
-	rootCmd.AddCommand(commands.MergeCmd)
-	rootCmd.AddCommand(commands.RemoteCmd)
+	// rootCmd.AddCommand(commands.MergeCmd)
+	// rootCmd.AddCommand(commands.RemoteCmd)
 	rootCmd.AddCommand(commands.GitCmd)
 
 	// Add standalone remote commands
-	rootCmd.AddCommand(commands.PushCmd)
-	rootCmd.AddCommand(commands.PullCmd)
-	rootCmd.AddCommand(commands.FetchCmd)
-	rootCmd.AddCommand(commands.SyncCmd)
+	// rootCmd.AddCommand(commands.PushCmd)
+	// rootCmd.AddCommand(commands.PullCmd)
+	// rootCmd.AddCommand(commands.FetchCmd)
+	// rootCmd.AddCommand(commands.SyncCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println("Error:", err)

@@ -45,6 +45,7 @@ var branchCreateCmd = &cobra.Command{
 		repo.Branches = append(repo.Branches, newBranch)
 
 		err = storage_instance.SaveRepository(repo)
+		gitService.CreateBranch(branchName)
 		if err != nil {
 			fmt.Printf("Error saving repository: %v\n", err)
 			return
