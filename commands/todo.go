@@ -131,7 +131,7 @@ var todoDoneCmd = &cobra.Command{
 		}
 
 		fmt.Printf("✅ Todo #%d marked as completed\n", todoID)
-		
+
 		// Suggest next steps
 		fmt.Println("💡 Ready to commit your work:")
 		fmt.Printf("   gitlike add .\n")
@@ -532,7 +532,7 @@ func init() {
 	// Add flags for create and add commands
 	todoCreateCmd.Flags().StringP("description", "d", "", "Todo description")
 	todoCreateCmd.Flags().StringP("priority", "p", "medium", "Todo priority (low, medium, high)")
-	
+
 	todoAddCmd.Flags().StringP("description", "d", "", "Todo description")
 	todoAddCmd.Flags().StringP("priority", "p", "medium", "Todo priority (low, medium, high)")
 

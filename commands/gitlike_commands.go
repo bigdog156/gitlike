@@ -139,7 +139,7 @@ var StatusCmd = &cobra.Command{
 						completedTodos++
 					}
 				}
-				
+
 				if activeTodos > 0 || completedTodos > 0 {
 					fmt.Printf("Todo status: %d active, %d completed\n", activeTodos, completedTodos)
 				}
@@ -161,7 +161,7 @@ var StatusCmd = &cobra.Command{
 			if len(line) < 3 {
 				continue
 			}
-			
+
 			statusCode := line[:2]
 			fileName := line[3:]
 
@@ -218,7 +218,7 @@ var CommitDirectCmd = &cobra.Command{
 		if message == "" && len(args) > 0 {
 			message = strings.Join(args, " ")
 		}
-		
+
 		if message == "" {
 			fmt.Println("Error: commit message required")
 			fmt.Println("Usage: gitlike commit -m \"your message\"")
@@ -253,12 +253,12 @@ var CommitDirectCmd = &cobra.Command{
 		// Determine todos to include in commit
 		var todosToInclude []int
 		todoContext := ""
-		
+
 		if activeTodo != nil {
 			todosToInclude = append(todosToInclude, activeTodo.ID)
 			todoContext = fmt.Sprintf(" (working on #%d: %s)", activeTodo.ID, activeTodo.Title)
 		}
-		
+
 		if len(completedTodos) > 0 {
 			todosToInclude = append(todosToInclude, completedTodos...)
 			if activeTodo != nil {
@@ -360,14 +360,14 @@ var LogCmd = &cobra.Command{
 
 		// Display GitLike commits with todo context
 		fmt.Println("GitLike commit history with todo tracking:\n")
-		
+
 		for i := len(repo.Commits) - 1; i >= 0; i-- {
 			commit := repo.Commits[i]
 			fmt.Printf("commit %s\n", commit.ID)
 			fmt.Printf("Author: %s\n", commit.Author)
 			fmt.Printf("Date: %s\n", commit.CreatedAt.Format("Mon Jan 2 15:04:05 2006 -0700"))
 			fmt.Printf("\n    %s\n", commit.Message)
-			
+
 			if len(commit.Todos) > 0 {
 				fmt.Printf("    \n    Todos included: ")
 				for j, todoID := range commit.Todos {
@@ -378,7 +378,7 @@ var LogCmd = &cobra.Command{
 				}
 				fmt.Printf("\n")
 			}
-			
+
 			if commit.ActiveTodo != nil {
 				fmt.Printf("    Active todo: #%d\n", *commit.ActiveTodo)
 			}
@@ -401,7 +401,7 @@ var LogCmd = &cobra.Command{
 // GitLike Checkout Command - gitlike checkout
 var CheckoutCmd = &cobra.Command{
 	Use:   "checkout [branch|commit]",
-	Short: "Switch branches or restore working tree files", 
+	Short: "Switch branches or restore working tree files",
 	Long:  "Switch to another branch with todo synchronization",
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
@@ -410,7 +410,7 @@ var CheckoutCmd = &cobra.Command{
 		}
 
 		target := args[0]
-		
+
 		// Create new branch if -b flag is provided
 		createBranch, _ := cmd.Flags().GetBool("b")
 		if createBranch {
